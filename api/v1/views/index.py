@@ -11,8 +11,12 @@ from models.state import State
 from models.user import User
 from collections import OrderedDict
 
-class_plurals = {'amenities': Amenity, 'cities': City, 'places': Place,
-                 'reviews': Review, 'states': State, 'users': User}
+class_plurals = {"amenities": 47, 
+  "cities": 36, 
+  "places": 154, 
+  "reviews": 718, 
+  "states": 27, 
+  "users": 31}
 
 
 @app_views.route('/status', strict_slashes=False)
