@@ -1,78 +1,78 @@
 #!/usr/bin/python3
-""" Flask routes for `User` object related URI subpaths using the
-`app_views` Blueprint.
+« " » Flask routes pour les sous-chemins d’URI liés à l’objet 'User' à l’aide du
+Plan directeur 'app_views'.
 """
-from api.v1.views import app_views
-from flask import Flask, jsonify, abort, request
-from models import storage
-from models.user import User
+à partir de l’API. v1. Importation de vues app_views
+à partir de flacon import Flask, jsonify, abort, request
+à partir de modèles Importer du stockage
+à partir de modèles.  utilisateur importer l’utilisateur 
 
 
-@app_views.route("/users", methods=['GET'],
-                 strict_slashes=False)
+@app_views. route(« /users », methods=['GET'],
+  strict_slashes=Faux)
 def GET_all_User():
-    """ Returns JSON list of all `User` instances in storage
-    Return:
-        JSON list of all `User` instances
+    « " » Renvoie la liste JSON de toutes les instances 'User' dans le stockage
+ Rendre:
+ Liste JSON de toutes les instances 'User'
     """
     user_list = []
-    for user in storage.all(User).values():
-        user_list.append(user.to_dict())
+    pour l’utilisateur en stockage. all(Utilisateur). valeurs():
+        user_list. append(utilisateur. to_dict())
 
     return jsonify(user_list)
 
 
-@app_views.route("/users/<user_id>", methods=['GET'],
-                 strict_slashes=False)
+@app_views. route(« /users/<user_id> », methods=['GET'],
+  strict_slashes=Faux)
 def GET_User(user_id):
-    """ Returns `User` instance in storage by id in URI subpath
+    « " » Renvoie l’instance 'User' stockée par id dans le sous-chemin URI
     Args:
-        user_id: uuid of `User` instance in storage
-    Return:
-        `User` instance with corresponding uuid, or 404 response
-    on error
+ user_id : uuid de l’instance 'User' dans le stockage
+ Rendre:
+ Instance 'User' avec uuid correspondant, ou réponse 404
+ sur erreur
     """
-    user = storage.get(User, user_id)
+    utilisateur = stockage. get(User, user_id)
 
-    if user:
-        return jsonify(user.to_dict())
-    else:
-        abort(404)
+    Si l’utilisateur :
+        return jsonify(user. to_dict())
+    sinon:
+        avorter(404)
 
 
-@app_views.route("/users/<user_id>", methods=['DELETE'],
-                 strict_slashes=False)
+@app_views. route(« /users/<user_id> », methods=['DELETE'],
+  strict_slashes=Faux)
 def DELETE_User(user_id):
-    """ Deletes `User` instance in storage by id in URI subpath
+    « " » Supprime l’instance 'User' dans le stockage par id dans le sous-chemin URI
     Args:
-        user_id: uuid of `User` instance in storage
-    Return:
-        Empty dictionary and response status 200, or 404 response
-    on error
+ user_id : uuid de l’instance 'User' dans le stockage
+ Rendre:
+ Dictionnaire vide et état de réponse 200 ou 404 réponse
+ sur erreur
     """
-    user = storage.get(User, user_id)
+    utilisateur = stockage. get(User, user_id)
 
-    if user:
-        storage.delete(user)
-        storage.save()
-        return ({})
-    else:
-        abort(404)
+    Si l’utilisateur :
+        stockage. supprimer(utilisateur)
+        stockage. sauvegarder()
+        rendre ({})
+    sinon:
+        avorter(404)
 
 
-@app_views.route('/users', methods=['POST'], strict_slashes=False)
+@app_views. route('/users', methods=['POST'], strict_slashes=Faux)
 def POST_User():
-    """ Creates new `User` instance in storage
-    Return:
-        Empty dictionary and response status 200, or 404 response
-    on error
+    « " » Crée une nouvelle instance 'User' dans le stockage
+ Rendre:
+ Dictionnaire vide et état de réponse 200 ou 404 réponse
+ sur erreur
     """
-    req_dict = request.get_json()
-    if not req_dict:
+    req_dict = demande. get_json()
+    Si ce n’est pas le cas, req_dict :
         return (jsonify({'error': 'Not a JSON'}), 400)
-    elif 'email' not in req_dict:
-        return (jsonify({'error': 'Missing email'}), 400)
-    elif 'password' not in req_dict:
+    Elif 'email' pas dans req_dict:
+        return (jsonify({'error': 'E-mail manquant'}), 400)
+    Elif 'mot de passe' n’est pas dans req_dict:
         return (jsonify({'error': 'Missing password'}), 400)
     new_User = User(**req_dict)
     new_User.save()
@@ -89,18 +89,18 @@ def PUT_User(user_id):
         user_id: uuid of `User` instance in storage
     Return:
         Empty dictionary and response status 200, or 404 response
-    on error
+ sur erreur
     """
-    user = storage.get(User, user_id)
-    req_dict = request.get_json()
+    utilisateur = stockage. get(User, user_id)
+    req_dict = demande. get_json()
 
-    if user:
-        if not req_dict:
+    Si l’utilisateur :
+        Si ce n’est pas le cas, req_dict :
             return (jsonify({'error': 'Not a JSON'}), 400)
-        for key, value in req_dict.items():
-            if key not in ['id', 'created_at', 'updated_at', 'email']:
-                setattr(user, key, value)
-        storage.save()
-        return (jsonify(user.to_dict()))
-    else:
-        abort(404)
+        pour la clé, valeur dans req_dict. items():
+            Si la clé n’est pas dans ['ID', 'created_at', 'updated_at', 'email']: 
+                setattr(utilisateur, clé, valeur)
+        stockage. sauvegarder()
+        return (jsonify(user. to_dict()))
+    sinon:
+        avorter(404)
