@@ -4,8 +4,7 @@
 import os
 from flask import Flask, jsonify
 from flask_cors import CORS
-
-from models import storage
+import models
 from api.v1.views import app_views
 
 
@@ -22,7 +21,7 @@ CORS(app, resources={'/*': {'origins': app_host}})
 def teardown_flask(exception):
     '''The Flask app/request context end event listener.'''
     # print(exception)
-    storage.close()
+    models.storage.close()
 
 
 @app.errorhandler(404)
