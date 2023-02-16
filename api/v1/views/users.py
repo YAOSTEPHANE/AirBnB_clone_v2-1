@@ -1,99 +1,106 @@
 #!/usr/bin/python3
-'''Contains the users view for the API.'''
-from flask import jsonify, request
-from werkzeug.exceptions import NotFound, BadRequest
-
-from api.v1.views import app_views
-from models import storage
-from models.user import User
-
-
-@app_views.route('/users', methods=['GET'])
-@app_views.route('/users/<user_id>', methods=['GET'])
-def get_users(user_id=None):
-    '''Gets the user with the given id or all users.
-    '''
-    if user_id:
-        user = storage.get(User, user_id)
-        if user:
-            obj = user.to_dict()
-            if 'places' in obj:
-                del obj['places']
-            if 'reviews' in obj:
-                del obj['reviews']
-            return jsonify(obj)
-        raise NotFound()
-    all_users = storage.all(User).values()
-    users = []
-    for user in all_users:
-        obj = user.to_dict()
-        if 'places' in obj:
-            del obj['places']
-        if 'reviews' in obj:
-            del obj['reviews']
-        users.append(obj)
-    return jsonify(users)
+« " » Flask routes pour les sous-chemins d’URI liés à l’objet 'User' à l’aide du
+Plan directeur 'app_views'.
+"""
+à partir de l’API. v1. Importation de vues app_views
+à partir de flacon import Flask, jsonify, abort, request
+à partir de modèles Importer du stockage
+à partir de modèles.  utilisateur importer l’utilisateur 
 
 
-@app_views.route('/users/<user_id>', methods=['DELETE'])
-def remove_user(user_id):
-    '''Removes a user with the given id.
-    '''
-    user = storage.get(User, user_id)
-    if user:
-        storage.delete(user)
-        storage.save()
-        return jsonify({}), 200
-    raise NotFound()
+@app_views. route(« /users », methods=['GET'],
+  strict_slashes=Faux)
+def GET_all_User():
+    « " » Renvoie la liste JSON de toutes les instances 'User' dans le stockage
+ Rendre:
+ Liste JSON de toutes les instances 'User'
+    """
+    user_list = []
+    pour l’utilisateur en stockage. all(Utilisateur). valeurs():
+        user_list. append(utilisateur. to_dict())
+
+    return jsonify(user_list)
 
 
-@app_views.route('/users', methods=['POST'])
-def add_user():
-    '''Adds a new user.
-    '''
-    data = {}
-    try:
-        data = request.get_json()
-    except Exception:
-        data = None
-    if type(data) is not dict:
-        raise BadRequest(description='Not a JSON')
-    if 'email' not in data:
-        raise BadRequest(description='Missing email')
-    if 'password' not in data:
-        raise BadRequest(description='Missing password')
-    user = User(**data)
-    user.save()
-    obj = user.to_dict()
-    if 'places' in obj:
-        del obj['places']
-    if 'reviews' in obj:
-        del obj['reviews']
-    return jsonify(obj), 201
+@app_views. route(« /users/<user_id> », methods=['GET'],
+  strict_slashes=Faux)
+def GET_User(user_id):
+    « " » Renvoie l’instance 'User' stockée par id dans le sous-chemin URI
+    Args:
+ user_id : uuid de l’instance 'User' dans le stockage
+ Rendre:
+ Instance 'User' avec uuid correspondant, ou réponse 404
+ sur erreur
+    """
+    utilisateur = stockage. get(User, user_id)
+
+    Si l’utilisateur :
+        return jsonify(user. to_dict())
+    sinon:
+        avorter(404)
 
 
-@app_views.route('/users/<user_id>', methods=['PUT'])
-def update_user(user_id):
-    '''Updates the user with the given id.
-    '''
-    xkeys = ('id', 'email', 'created_at', 'updated_at')
-    user = storage.get(User, user_id)
-    if user:
-        data = {}
-        try:
-            data = request.get_json()
-        except Exception:
-            data = None
-        if type(data) is not dict:
-            raise BadRequest(description='Not a JSON')
-        for key, value in data.items():
-            if key not in xkeys:
-                setattr(user, key, value)
-        user.save()
-        obj = user.to_dict()
-        if 'places' in obj:
-            del obj['places']
-        if 'reviews' in obj:
-            del obj['reviews']
-        return jsonify(obj), 200
-    raise NotFound()
+@app_views. route(« /users/<user_id> », methods=['DELETE'],
+  strict_slashes=Faux)
+def DELETE_User(user_id):
+    « " » Supprime l’instance 'User' dans le stockage par id dans le sous-chemin URI
+    Args:
+ user_id : uuid de l’instance 'User' dans le stockage
+ Rendre:
+ Dictionnaire vide et état de réponse 200 ou 404 réponse
+ sur erreur
+    """
+    utilisateur = stockage. get(User, user_id)
+
+    Si l’utilisateur :
+        stockage. supprimer(utilisateur)
+        stockage. sauvegarder()
+        rendre ({})
+    sinon:
+        avorter(404)
+
+
+@app_views. route('/users', methods=['POST'], strict_slashes=Faux)
+def POST_User():
+    « " » Crée une nouvelle instance 'User' dans le stockage
+ Rendre:
+ Dictionnaire vide et état de réponse 200 ou 404 réponse
+ sur erreur
+    """
+    req_dict = demande. get_json()
+    Si ce n’est pas le cas, req_dict :
+        return (jsonify({'error': 'Not a JSON'}), 400)
+    Elif 'email' pas dans req_dict:
+        return (jsonify({'error': 'E-mail manquant'}), 400)
+    Elif 'mot de passe' n’est pas dans req_dict:
+        return (jsonify({'error': 'Missing password'}), 400)
+    new_User = User(**req_dict)
+    new_User.save()
+
+    return (jsonify(new_User.to_dict()), 201)
+
+
+@app_views.route("/users/<user_id>", methods=['PUT'],
+                 strict_slashes=False)
+def PUT_User(user_id):
+    """ Updates `User` instance in storage by id in URI subpath, with
+    kwargs from HTTP body request JSON dict
+    Args:
+        user_id: uuid of `User` instance in storage
+    Return:
+        Empty dictionary and response status 200, or 404 response
+ sur erreur
+    """
+    utilisateur = stockage. get(User, user_id)
+    req_dict = demande. get_json()
+
+    Si l’utilisateur :
+        Si ce n’est pas le cas, req_dict :
+            return (jsonify({'error': 'Not a JSON'}), 400)
+        pour la clé, valeur dans req_dict. items():
+            Si la clé n’est pas dans ['ID', 'created_at', 'updated_at', 'email']: 
+                setattr(utilisateur, clé, valeur)
+        stockage. sauvegarder()
+        return (jsonify(user. to_dict()))
+    sinon:
+        avorter(404)
