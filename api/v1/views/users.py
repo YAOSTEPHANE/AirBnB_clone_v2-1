@@ -1,106 +1,95 @@
 #!/usr/bin/python3
-« " » Flask routes pour les sous-chemins d’URI liés à l’objet 'User' à l’aide du
-Plan directeur 'app_views'.
-"""
-à partir de l’API. v1. Importation de vues app_views
-à partir de flacon import Flask, jsonify, abort, request
-à partir de modèles Importer du stockage
-à partir de modèles.  utilisateur importer l’utilisateur 
+""" objects that handle all default RestFul API actions for Users """
+from models.user import User
+from models import storage
+from api.v1.views import app_views
+from flask import abort, jsonify, make_response, request
+from flasgger.utils import swag_from
 
 
-@app_views. route(« /users », methods=['GET'],
-  strict_slashes=Faux)
-def GET_all_User():
-    « " » Renvoie la liste JSON de toutes les instances 'User' dans le stockage
- Rendre:
- Liste JSON de toutes les instances 'User'
+@app_views.route('/users', methods=['GET'], strict_slashes=False)
+@swag_from('documentation/user/all_users.yml')
+def get_users():
     """
-    user_list = []
-    pour l’utilisateur en stockage. all(Utilisateur). valeurs():
-        user_list. append(utilisateur. to_dict())
-
-    return jsonify(user_list)
-
-
-@app_views. route(« /users/<user_id> », methods=['GET'],
-  strict_slashes=Faux)
-def GET_User(user_id):
-    « " » Renvoie l’instance 'User' stockée par id dans le sous-chemin URI
-    Args:
- user_id : uuid de l’instance 'User' dans le stockage
- Rendre:
- Instance 'User' avec uuid correspondant, ou réponse 404
- sur erreur
+    Retrieves the list of all user objects
+    or a specific user
     """
-    utilisateur = stockage. get(User, user_id)
-
-    Si l’utilisateur :
-        return jsonify(user. to_dict())
-    sinon:
-        avorter(404)
-
-
-@app_views. route(« /users/<user_id> », methods=['DELETE'],
-  strict_slashes=Faux)
-def DELETE_User(user_id):
-    « " » Supprime l’instance 'User' dans le stockage par id dans le sous-chemin URI
-    Args:
- user_id : uuid de l’instance 'User' dans le stockage
- Rendre:
- Dictionnaire vide et état de réponse 200 ou 404 réponse
- sur erreur
-    """
-    utilisateur = stockage. get(User, user_id)
-
-    Si l’utilisateur :
-        stockage. supprimer(utilisateur)
-        stockage. sauvegarder()
-        rendre ({})
-    sinon:
-        avorter(404)
+    all_users = storage.all(User).values()
+    list_users = []
+    for user in all_users:
+        list_users.append(user.to_dict())
+    return jsonify(list_users)
 
 
-@app_views. route('/users', methods=['POST'], strict_slashes=Faux)
-def POST_User():
-    « " » Crée une nouvelle instance 'User' dans le stockage
- Rendre:
- Dictionnaire vide et état de réponse 200 ou 404 réponse
- sur erreur
-    """
-    req_dict = demande. get_json()
-    Si ce n’est pas le cas, req_dict :
-        return (jsonify({'error': 'Not a JSON'}), 400)
-    Elif 'email' pas dans req_dict:
-        return (jsonify({'error': 'E-mail manquant'}), 400)
-    Elif 'mot de passe' n’est pas dans req_dict:
-        return (jsonify({'error': 'Missing password'}), 400)
-    new_User = User(**req_dict)
-    new_User.save()
+@app_views.route('/users/<user_id>', methods=['GET'], strict_slashes=False)
+@swag_from('documentation/user/get_user.yml', methods=['GET'])
+def get_user(user_id):
+    """ Retrieves an user """
+    user = storage.get(User, user_id)
+    if not user:
+        abort(404)
 
-    return (jsonify(new_User.to_dict()), 201)
+    return jsonify(user.to_dict())
 
 
-@app_views.route("/users/<user_id>", methods=['PUT'],
+@app_views.route('/users/<user_id>', methods=['DELETE'],
                  strict_slashes=False)
-def PUT_User(user_id):
-    """ Updates `User` instance in storage by id in URI subpath, with
-    kwargs from HTTP body request JSON dict
-    Args:
-        user_id: uuid of `User` instance in storage
-    Return:
-        Empty dictionary and response status 200, or 404 response
- sur erreur
+@swag_from('documentation/user/delete_user.yml', methods=['DELETE'])
+def delete_user(user_id):
     """
-    utilisateur = stockage. get(User, user_id)
-    req_dict = demande. get_json()
+    Deletes a user Object
+    """
 
-    Si l’utilisateur :
-        Si ce n’est pas le cas, req_dict :
-            return (jsonify({'error': 'Not a JSON'}), 400)
-        pour la clé, valeur dans req_dict. items():
-            Si la clé n’est pas dans ['ID', 'created_at', 'updated_at', 'email']: 
-                setattr(utilisateur, clé, valeur)
-        stockage. sauvegarder()
-        return (jsonify(user. to_dict()))
-    sinon:
-        avorter(404)
+    user = storage.get(User, user_id)
+
+    if not user:
+        abort(404)
+
+    storage.delete(user)
+    storage.save()
+
+    return make_response(jsonify({}), 200)
+
+
+@app_views.route('/users', methods=['POST'], strict_slashes=False)
+@swag_from('documentation/user/post_user.yml', methods=['POST'])
+def post_user():
+    """
+    Creates a user
+    """
+    if not request.get_json():
+        abort(400, description="Not a JSON")
+
+    if 'email' not in request.get_json():
+        abort(400, description="Missing email")
+    if 'password' not in request.get_json():
+        abort(400, description="Missing password")
+
+    data = request.get_json()
+    instance = User(**data)
+    instance.save()
+    return make_response(jsonify(instance.to_dict()), 201)
+
+
+@app_views.route('/users/<user_id>', methods=['PUT'], strict_slashes=False)
+@swag_from('documentation/user/put_user.yml', methods=['PUT'])
+def put_user(user_id):
+    """
+    Updates a user
+    """
+    user = storage.get(User, user_id)
+
+    if not user:
+        abort(404)
+
+    if not request.get_json():
+        abort(400, description="Not a JSON")
+
+    ignore = ['id', 'email', 'created_at', 'updated_at']
+
+    data = request.get_json()
+    for key, value in data.items():
+        if key not in ignore:
+            setattr(user, key, value)
+    storage.save()
+    return make_response(jsonify(user.to_dict()), 200)
